@@ -1,0 +1,60 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="博客近期的变化" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://lutaonan.com/blog/nearly-blog-change/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://mas.to/@djyde">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>博客近期的变化 | Tsja&#39;s Blog</title>
+  
+  <script async defer data-website-id="a7250fef-ff01-4734-a866-6f0eb1c6e7a0" src="https://a.taonan.lu/ana.js"></script>
+</head>
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">Tsja&#39;s Blog</a>
+    </div>
+    <h1>博客近期的变化</h1>
+    <div class="italic text-gray-500">
+      2019/06/11
+    </div>
+    <div>
+      <h3 id="%E5%9B%BE%E7%89%87-cdn-%E8%BF%81%E7%A7%BB%E5%88%B0%E4%BA%86%E9%98%BF%E9%87%8C%E4%BA%91" tabindex="-1">图片 CDN 迁移到了阿里云</h3>
+<p>从上个月开始，博客的图片全部无法显示，原因是新浪微博开始防盗链了。</p>
+<p>起初选择使用新浪微博的图床，一方面是因为不用花钱，另一方面是因为觉得自己的博客没有多少访问量，也就不折腾 CDN 了。然而这一两年我意识到，我认真写下的文字也被不少人在认真看待。趁着这个契机，就把博客的图片全部迁移到稳定的 CDN 上。</p>
+<p>我选择了<a href="/link/aliyun">阿里云 OSS + CDN 的方案</a>，我用 grep 把博客里所有的新浪图床图片找了出来，然后批量下载下来，上传到 OSS 上。</p>
+<p>比较麻烦的是国内的 CDN 域名需要备案，除此之外，就是阿里云的一条龙服务 —— 域名可以绑定到 CDN，CDN 可以直接关联 OSS。体验还算不错。</p>
+<h3 id="%E5%85%A8%E7%AB%99-cloudflare" tabindex="-1">全站 Cloudflare</h3>
+<p>Coding Page 的 Pages 服务在香港的腾讯云，抽风是家常便饭，无法忍受。于是接入了 Cloudflare, 现在你访问的这里就是经过 Cloudflare 加速的页面。</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 hi@taonan.lu
+      </div>
+      <hr />
+    <div class="text-center">
+  <img class="w-64 inline-block" src="https://i.loli.net/2021/10/20/JZ26YwDhmGzUy4u.jpg" alt="" />
+  <div class="text-sm">
+    通过支付宝 djyde520@gmail.com 或赞赏码赞助此文
+  </div>
+</div>
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  Tsja's Blog since 2023
+</footer>
+
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

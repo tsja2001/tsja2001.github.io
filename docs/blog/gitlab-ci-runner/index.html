@@ -1,0 +1,107 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="搭建自己的 Gitlab CI Runner" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://lutaonan.com/blog/gitlab-ci-runner/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://mas.to/@djyde">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>搭建自己的 Gitlab CI Runner | Tsja&#39;s Blog</title>
+  
+  <script async defer data-website-id="a7250fef-ff01-4734-a866-6f0eb1c6e7a0" src="https://a.taonan.lu/ana.js"></script>
+</head>
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">Tsja&#39;s Blog</a>
+    </div>
+    <h1>搭建自己的 Gitlab CI Runner</h1>
+    <div class="italic text-gray-500">
+      2017/04/20
+    </div>
+    <div>
+      <nav class="table-of-contents"><ol><li><a href="#preface">Preface</a><ol><li><a href="#ci-(continuous-integration)">CI (Continuous Integration)</a></li><li><a href="#ci-runner">CI Runner</a></li></ol></li><li><a href="#gitlab-runner-%E7%8E%AF%E5%A2%83">Gitlab Runner 环境</a><ol><li><a href="#%E5%AE%89%E8%A3%85-docker">安装 Docker</a></li><li><a href="#%E6%8B%89%E5%8F%96-gitlab-runner-%E9%95%9C%E5%83%8F">拉取 gitlab-runner 镜像</a></li><li><a href="#%E6%B7%BB%E5%8A%A0-gitlab-runner-container">添加 gitlab-runner container</a></li><li><a href="#%E9%85%8D%E7%BD%AE%E7%94%A8%E4%BA%8E-runner-%E7%9A%84-docker-image">配置用于 runner 的 docker image</a></li><li><a href="#%E6%9E%84%E5%BB%BA-docker-image">构建 Docker Image</a></li><li><a href="#%E6%B3%A8%E5%86%8C-runner">注册 Runner</a></li></ol></li><li><a href="#faq">FAQ</a><ol><li><a href="#ci-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%87%BA%E7%8E%B0-error%3A-job-failed%3A-api-error-(404)%3A-repository-xxx-not-found%3A-does-not-exist-or-no-pull-access">CI 运行时出现 ERROR: Job failed: API error (404): repository xxx not found: does not exist or no pull access</a></li></ol></li><li><a href="#%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB">延伸阅读</a></li></ol></nav><blockquote>
+<p>假定你已经有一台可用的，可联网的机器</p>
+</blockquote>
+<h2 id="preface" tabindex="-1">Preface</h2>
+<p>这篇文章将介绍如何使用自己的机器来搭建用于 Gitlab CI 的 runner.  在搭建自己的 CI Runner 之前，需要先明确一些概念：</p>
+<h3 id="ci-(continuous-integration)" tabindex="-1">CI (Continuous Integration)</h3>
+<p>CI 的全称是 Continuous Integration (持续集成)，是 extreme programming (极限编程) 的一部分。我们常用 CI 来做一些自动化工作，这种自动化工作会运行在一台集中的机器上，比如程序的打包，单元测试，部署等。这种构建方式避免了了打包环境差异引动的错误，并且通过 Gitlab 的 hook, 在代码提交的各个环节自动地完成一系列的构建工作。</p>
+<h3 id="ci-runner" tabindex="-1">CI Runner</h3>
+<p>和第三方的 Travis CI, CircleCI 不同，<strong>Gitlab 本身并不提供机器</strong>，只提供一个注册机器的接口。这些机器用于运行构建逻辑，在 Gitlab 中被称为 Runner.</p>
+<p><img src="https://gbstatic.djyde.com/assets/006tNc79gy1fet5ffxwglj31ac0y2wj8.jpg" alt="runners"></p>
+<h2 id="gitlab-runner-%E7%8E%AF%E5%A2%83" tabindex="-1">Gitlab Runner 环境</h2>
+<p>在这里直接使用 Gitlab Runner 的官方 docker image:</p>
+<h3 id="%E5%AE%89%E8%A3%85-docker" tabindex="-1">安装 Docker</h3>
+<pre class="language-bash"><code class="language-bash"><span class="token function">curl</span> -sSL https://get.daocloud.io/docker <span class="token operator">|</span> <span class="token function">sh</span></code></pre>
+<h3 id="%E6%8B%89%E5%8F%96-gitlab-runner-%E9%95%9C%E5%83%8F" tabindex="-1">拉取 gitlab-runner 镜像</h3>
+<p>因为众所周知的原因，国内 pull docker 镜像非常不稳定，所以在这里用 Daocloud 提供的镜像：</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">curl</span> -sSL https://get.daocloud.io/daotools/set_mirror.sh <span class="token operator">|</span> <span class="token function">sh</span> -s http://718dbf2d.m.daocloud.io<br><br><span class="token function">sudo</span> <span class="token function">service</span> <span class="token function">docker</span> restart</code></pre>
+<p>拉取镜像：</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">docker</span> pull gitlab/gitlab-runner:latest</code></pre>
+<h3 id="%E6%B7%BB%E5%8A%A0-gitlab-runner-container" tabindex="-1">添加 gitlab-runner container</h3>
+<pre class="language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">docker</span> run -d --name gitlab-runner --restart always <span class="token punctuation">\</span><br>  -v /srv/gitlab-runner/config:/etc/gitlab-runner <span class="token punctuation">\</span><br>  -v /var/run/docker.sock:/var/run/docker.sock <span class="token punctuation">\</span><br>  gitlab/gitlab-runner:latest</code></pre>
+<h3 id="%E9%85%8D%E7%BD%AE%E7%94%A8%E4%BA%8E-runner-%E7%9A%84-docker-image" tabindex="-1">配置用于 runner 的 docker image</h3>
+<blockquote>
+<p>虽然 Gitlab 支持多种 runner 运行方式，但本文建议使用 docker，因为使用 docker 较为灵活，一台机器可以创建多个 docker images 分别为不同的项目进行 CI, 但仍能保持环境隔离。</p>
+</blockquote>
+<p>配置 Docker image 最简单的方式是写 <code>Dockerfile</code>, 比如可以用 Node.js 官方的 Docker image:</p>
+<pre class="language-dockerfile"><code class="language-dockerfile"><span class="token comment"># Dockerfile</span><br><span class="token instruction"><span class="token keyword">FROM</span> node:7.9.0</span></code></pre>
+<p>由于每个业务总会有各自的环境要求，比如应用依赖底层的库。这时可以通过 <code>Dockerfile</code> 配置：</p>
+<pre class="language-dockerfile"><code class="language-dockerfile"><span class="token comment"># Dockerfile</span><br><span class="token instruction"><span class="token keyword">FROM</span> node:7.9.0</span><br><br><span class="token instruction"><span class="token keyword">RUN</span> apt-get update &amp;&amp; apt-get install -y <span class="token operator">\</span><br>	package-foo</span><br>	package-bar</code></pre>
+<h3 id="%E6%9E%84%E5%BB%BA-docker-image" tabindex="-1">构建 Docker Image</h3>
+<p>写好 <code>Dockerfile</code> 后，需要把它构建成 Image:</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">ls</span><br><span class="token comment"># Dockerfile</span><br><br><span class="token function">docker</span> build -t IMAGE_NAME <span class="token builtin class-name">.</span></code></pre>
+<p>Build 完后，通过 <code>sudo docker image ls</code> 查看 image 状态。</p>
+<h3 id="%E6%B3%A8%E5%86%8C-runner" tabindex="-1">注册 Runner</h3>
+<p>接下来就可以注册 Runner:</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">docker</span> <span class="token builtin class-name">exec</span> -it gitlab-runner gitlab-ci-multi-runner register</code></pre>
+<p>程序会要求你填写相关的信息，这些信息可以从 Gitlab 项目的 <code>Settings -&gt; Runners</code> 页面中找到：</p>
+<p><img src="https://gbstatic.djyde.com/assets/006tNc79gy1fetavn7r0lj319u0os78u.jpg" alt="Gitlab runner info"></p>
+<pre class="language-bash"><code class="language-bash">Please enter the gitlab-ci coordinator URL:<br><span class="token comment"># http://gitlab.alibaba-inc.com/ci</span><br><br>Please enter the gitlab-ci token <span class="token keyword">for</span> this runner:<br><span class="token comment"># 项目的 token</span><br><br>Please enter the gitlab-ci description <span class="token keyword">for</span> this runner:<br><span class="token comment"># Runner 的 description</span><br><br>Please enter the gitlab-ci tags <span class="token keyword">for</span> this runner <span class="token punctuation">(</span>comma separated<span class="token punctuation">)</span>:<br><span class="token comment"># Runner 的 tag</span><br><br>Whether to run untagged builds <span class="token punctuation">[</span>true/false<span class="token punctuation">]</span>:<br><span class="token comment"># true</span><br><br>Please enter the executor: docker, parallels, shell, kubernetes, docker-ssh, ssh, virtualbox, docker+machine, docker-ssh+machine:<br><span class="token comment"># docker</span><br><br>Please enter the default Docker image <span class="token punctuation">(</span>e.g. ruby:2.1<span class="token punctuation">)</span>:<br><span class="token comment"># 填入构建 Docker image 时填写的 image 名称</span></code></pre>
+<p>这时 runner 就会出现在 <code>runners</code> 页面：</p>
+<p><img src="https://gbstatic.djyde.com/assets/006tNc79gy1fetbnh1e12j310008qdgs.jpg" alt=""></p>
+<h2 id="faq" tabindex="-1">FAQ</h2>
+<h3 id="ci-%E8%BF%90%E8%A1%8C%E6%97%B6%E5%87%BA%E7%8E%B0-error%3A-job-failed%3A-api-error-(404)%3A-repository-xxx-not-found%3A-does-not-exist-or-no-pull-access" tabindex="-1">CI 运行时出现 <code>ERROR: Job failed: API error (404): repository xxx not found: does not exist or no pull access</code></h3>
+<p>这是由于 Gitlab 会默认从远程拉取 image，而我们的 image 是在本地构建的，所以需要对 gitlab-runner 进行配置，把 <code>pull_policy</code> 设置为 <code>if-not-present</code> 或 <code>never</code>.</p>
+<pre class="language-bash"><code class="language-bash"><span class="token comment"># 进入 gitlab-runner 的 bash 环境</span><br><span class="token function">sudo</span> <span class="token function">docker</span> <span class="token builtin class-name">exec</span> -it gitlab-runner <span class="token function">bash</span><br><br><span class="token comment"># 编辑 config.toml</span><br><span class="token function">nano</span> /etc/gitlab-runner/config.toml</code></pre>
+<p>编辑 <code>config.toml</code> 中对应的 runner:</p>
+<pre class="language-diff"><code class="language-diff">[[runners]]<br><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line"> name = ""<br></span><span class="token prefix unchanged"> </span><span class="token line"> url = ""<br></span><span class="token prefix unchanged"> </span><span class="token line"> token = ""<br></span><span class="token prefix unchanged"> </span><span class="token line"> executor = "docker"<br></span><span class="token prefix unchanged"> </span><span class="token line"> [runners.docker]<br></span><span class="token prefix unchanged"> </span><span class="token line">   tls_verify = false<br></span><span class="token prefix unchanged"> </span><span class="token line">   image = "nb-node"<br></span><span class="token prefix unchanged"> </span><span class="token line">   privileged = false<br></span><span class="token prefix unchanged"> </span><span class="token line">   disable_cache = false<br></span><span class="token prefix unchanged"> </span><span class="token line">   volumes = ["/cache"]<br></span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">   pull_policy = "if-not-present"<br></span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line"> [runners.cache]</code></pre>
+<h2 id="%E5%BB%B6%E4%BC%B8%E9%98%85%E8%AF%BB" tabindex="-1">延伸阅读</h2>
+<ul>
+<li><a href="https://docs.gitlab.com/runner/install/docker.html">Run GitLab Runner in a container</a></li>
+<li><a href="https://www.daocloud.io/mirror#accelerator-doc">配置 Docker 加速器</a></li>
+<li><a href="https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/">Best practices for writing Dockerfiles</a></li>
+<li><a href="https://docs.gitlab.com/runner/executors/docker.html#using-the-if-not-present-pull-policy">Using the if-not-present pull policy</a></li>
+</ul>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 hi@taonan.lu
+      </div>
+      <hr />
+    <div class="text-center">
+  <img class="w-64 inline-block" src="https://i.loli.net/2021/10/20/JZ26YwDhmGzUy4u.jpg" alt="" />
+  <div class="text-sm">
+    通过支付宝 djyde520@gmail.com 或赞赏码赞助此文
+  </div>
+</div>
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  Tsja's Blog since 2023
+</footer>
+
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

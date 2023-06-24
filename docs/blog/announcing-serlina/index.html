@@ -1,0 +1,94 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Serlina: 渐进式的 React 服务器渲染框架" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://lutaonan.com/blog/announcing-serlina/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://mas.to/@djyde">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Serlina: 渐进式的 React 服务器渲染框架 | Tsja&#39;s Blog</title>
+  
+  <script async defer data-website-id="a7250fef-ff01-4734-a866-6f0eb1c6e7a0" src="https://a.taonan.lu/ana.js"></script>
+</head>
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">Tsja&#39;s Blog</a>
+    </div>
+    <h1>Serlina: 渐进式的 React 服务器渲染框架</h1>
+    <div class="italic text-gray-500">
+      2018/08/13
+    </div>
+    <div>
+      <blockquote>
+<p>副标题: 《可能是最适合 Egg 的 React Serverside-rendering 方案》</p>
+</blockquote>
+<p>上一周周末我花了些时间来完成了一个 React serverside-rendering 框架——<a href="https://github.com/djyde/serlina">Serlina</a>. 在此想通过这篇文章讲讲 Serlina 框架本身，以及我为什么要开发她。</p>
+<p>(下文中 React Serverside-rendering 均简称为 &quot;SSR&quot;)</p>
+<h2 id="%E8%B5%B7%E5%9B%A0" tabindex="-1">起因</h2>
+<p>最直接的起因是我们在内部有一个 React base 的项目的首页希望做服务器渲染，我参考了一些方案，如 Next.js, Fusion.js 等等。我很喜欢 Next.js, 我从他刚发布的时候就在持续关注，我认为他已经是最完美的 SSR 方案。</p>
+<p>但是当我试图把 Next.js 接入到我们的服务器端 (<a href="https://eggjs.org">Egg.js</a> base) 时，我发现 <a href="https://github.com/eggjs/egg/issues/328">由于 Next.js 需要控制 http context</a>, 导致无法兼容 Egg 程序。</p>
+<p>我认为 Next.js 的核心应该可以脱离 http context. 只需要完成构建配置、renderToString 这些脏活，然后把渲染后的 HTML String 返回即可。于是我浏览了 Next.js 的代码，试图寻找类似 <code>nextjs/core</code> 的东西，然而并没有。Next.js 是一个完整的 Web Framework.</p>
+<p>于是我开始设计一个理念是<strong>脱离服务器实现</strong>的 SSR 框架，并取名为 Serlina. 她和 Next.js 拥有同样友好的开发体验，唯一不同之处是，她不关心服务器实现。</p>
+<h2 id="%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E4%BE%8B%E5%AD%90" tabindex="-1">最简单的例子</h2>
+<p>安装依赖</p>
+<pre><code>npm i serlina react react-dom --save
+</code></pre>
+<p>创建一个应用目录</p>
+<pre class="language-bash"><code class="language-bash">├── index.js<br>├── page<br>│   └── page1.js</code></pre>
+<p>编写一个 React 页面</p>
+<pre class="language-js"><code class="language-js"><span class="token comment">// page/page1.js</span><br><br><span class="token keyword">export</span> <span class="token keyword">default</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br>  <span class="token keyword">return</span> <span class="token operator">&lt;</span>div<span class="token operator">></span>Hello Serlina<span class="token operator">!</span><span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">></span><br><span class="token punctuation">}</span></code></pre>
+<p>最后是服务器的实现</p>
+<pre class="language-js"><code class="language-js"><span class="token comment">// index.js</span><br><br><span class="token keyword">const</span> <span class="token punctuation">{</span> Serlina <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'serlina'</span><span class="token punctuation">)</span><br><span class="token keyword">const</span> path <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'path'</span><span class="token punctuation">)</span><br><br><span class="token keyword">const</span> http <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'http'</span><span class="token punctuation">)</span><br><br><span class="token comment">// 初始化 Serlina</span><br><span class="token keyword">const</span> serlina <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Serlina</span><span class="token punctuation">(</span><span class="token punctuation">{</span><br>  <span class="token literal-property property">baseDir</span><span class="token operator">:</span> path<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span> <span class="token string">'./'</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><br><br>serlina<span class="token punctuation">.</span><span class="token function">prepare</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br>    http<span class="token punctuation">.</span><span class="token function">createServer</span><span class="token punctuation">(</span><span class="token keyword">async</span> <span class="token punctuation">(</span><span class="token parameter">req<span class="token punctuation">,</span> res</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br>        res<span class="token punctuation">.</span><span class="token function">writeHead</span><span class="token punctuation">(</span><span class="token number">200</span><span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token string-property property">'Content-Type'</span><span class="token operator">:</span> <span class="token string">'text/html'</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>req<span class="token punctuation">.</span>url <span class="token operator">===</span> <span class="token string">'/page1'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>          <span class="token comment">// 渲染页面</span><br>          <span class="token keyword">const</span> rendered <span class="token operator">=</span> <span class="token keyword">await</span> serlina<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span><span class="token string">'page1'</span><span class="token punctuation">)</span><br>          res<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>rendered<span class="token punctuation">.</span>string<span class="token punctuation">)</span><br>        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>          res<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span><span class="token string">'works!'</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        res<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span><span class="token number">8090</span><span class="token punctuation">)</span><br>  <span class="token punctuation">}</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">catch</span><span class="token punctuation">(</span>console<span class="token punctuation">.</span>error<span class="token punctuation">)</span></code></pre>
+<p>通过以上的例子，Serlina 有两个最主要的 API:</p>
+<ul>
+<li><code>prepare()</code> 用于做构建准备</li>
+<li><code>render()</code> 用于渲染 React 页面, 得到 HTML string.</li>
+</ul>
+<p>以上的例子也表达了 Serlina 的核心思想——她处理了 React 服务器渲染的一切脏活，然后把处理好的东西交给你自己去渲染到客户端。</p>
+<p>这就是「渐进式」的意思：你可以在某些地方用她，也可以在某些地方不用她。你可以只在某个路由里面使用 serlina.render() 去渲染。这有点像是一个模板引擎。</p>
+<h2 id="%E5%9C%A8-egg-%E4%B8%AD%E4%BD%BF%E7%94%A8" tabindex="-1">在 Egg 中使用</h2>
+<p><a href="https://github.com/serlina-community/egg-serlina">egg-serlina</a></p>
+<p>我之所以认为 Serlina 是最适合 Egg 的 SSR 方案，是因为我认为 Next.js 是最好的 SSR 方案。而 Serlina 把 Next.js 的体验带到了 Egg, 那么她应该就是最适合 Egg 的 SSR 方案。</p>
+<blockquote>
+<p>以下内容非 Egg 用户可以跳过。</p>
+</blockquote>
+<pre><code>npm i egg-serlina react react-dom --save
+</code></pre>
+<pre class="language-js"><code class="language-js">exports<span class="token punctuation">.</span>serlina <span class="token operator">=</span> <span class="token punctuation">{</span><br>  <span class="token literal-property property">map</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token string-property property">'/page1'</span><span class="token operator">:</span> <span class="token string">'page1'</span><br>  <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>配置了用 Serlina 渲染的页面后，页面会在 <code>getInitialProps</code> 里得到 egg 的 ctx:</p>
+<pre class="language-js"><code class="language-js"><span class="token comment">// {app_root}/client/page/page1.js</span><br><br><span class="token keyword">export</span> <span class="token keyword">default</span> <span class="token keyword">class</span> <span class="token class-name">Page1</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span><br><br>  <span class="token keyword">static</span> <span class="token keyword">async</span> <span class="token function">getInitialProps</span><span class="token punctuation">(</span><span class="token parameter"><span class="token punctuation">{</span> ctx <span class="token punctuation">}</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// ctx is egg `ctx`</span><br>    <span class="token keyword">return</span> <span class="token punctuation">{</span><br>      <span class="token literal-property property">data</span><span class="token operator">:</span> <span class="token keyword">await</span> ctx<span class="token punctuation">.</span>service<span class="token punctuation">.</span><span class="token function">getData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br>  <span class="token punctuation">}</span><br><br>  <span class="token function">render</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">return</span> <span class="token punctuation">(</span><br>      <span class="token operator">&lt;</span>div<span class="token operator">></span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>data<span class="token punctuation">}</span><span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">></span><br>    <span class="token punctuation">)</span><br>  <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h2 id="%E5%B8%B8%E8%A2%AB%E9%97%AE%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98" tabindex="-1">常被问到的问题</h2>
+<h3 id="%E5%92%8C-next.js-%E6%9C%89%E4%BB%80%E4%B9%88%E5%8C%BA%E5%88%AB" tabindex="-1">和 Next.js 有什么区别</h3>
+<p>关于这个问题，上文已经说得很清楚了。另外，Serlina 并不是要取代 Next.js, 而是希望在某些场景，能成为一种合适的选择。</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 hi@taonan.lu
+      </div>
+      <hr />
+    <div class="text-center">
+  <img class="w-64 inline-block" src="https://i.loli.net/2021/10/20/JZ26YwDhmGzUy4u.jpg" alt="" />
+  <div class="text-sm">
+    通过支付宝 djyde520@gmail.com 或赞赏码赞助此文
+  </div>
+</div>
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  Tsja's Blog since 2023
+</footer>
+
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

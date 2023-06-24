@@ -1,0 +1,20 @@
+{% extends "_layout.njk" %}
+{% block layoutBody %}
+  <div class="container prose prose-zinc prose-sm sm:prose-base mx-auto py-12 sm:py-24 px-12 sm:px-0">
+    <a href="/" class="no-underline">
+      <h1>{{ config.title }}</h1>
+    </a>
+    <nav class="flex gap-4">
+      <a href="/">首页</a>
+      <a href="/daily">随笔</a>
+      <a href="/blog">文章</a>
+      <a href="/blog">作品集</a>
+    </nav>
+
+    {% block pageBody %}
+      {{ content | safe }}
+    {% endblock %}
+
+    {% include "./_footer.njk" %}
+  </div>
+{% endblock %}

@@ -1,0 +1,101 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="用 Code Snippet 提高开发效率" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://lutaonan.com/blog/how-to-use-code-snippets/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://mas.to/@djyde">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>用 Code Snippet 提高开发效率 | Tsja&#39;s Blog</title>
+  
+  <script async defer data-website-id="a7250fef-ff01-4734-a866-6f0eb1c6e7a0" src="https://a.taonan.lu/ana.js"></script>
+</head>
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">Tsja&#39;s Blog</a>
+    </div>
+    <h1>用 Code Snippet 提高开发效率</h1>
+    <div class="italic text-gray-500">
+      2020/12/25
+    </div>
+    <div>
+      <p>写代码的时候总会遇到一些相同的但是反复要写的代码，比方说每次写一个 React Component, 都要这样写一遍：</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">function</span> <span class="token function">App</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>  <span class="token keyword">return</span> <span class="token punctuation">(</span><br>    <span class="token operator">&lt;</span><span class="token operator">></span><br>    <span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">></span><br>  <span class="token punctuation">)</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">export</span> <span class="token keyword">default</span> App</code></pre>
+<p>这时候很适合把他写成 Code Snippet, 让编辑器帮我去生成。每个编辑器或 IDE 都有 Snippet 功能，我自己常用 VS Code, 所以我会去写一些 VS Code 的 Snippet 文件。</p>
+<blockquote>
+<p>VS Code code snippet 的配置入口：</p>
+<p><img src="https://gbstatic.djyde.com/uPic/cXvY0y.png?x-oss-process=style/80" alt="VS Code code snippet 配置入口"></p>
+</blockquote>
+<p>VS Code code snippet 配置是一个 JSON 文件，按照<a href="https://code.visualstudio.com/docs/editor/userdefinedsnippets#_creating-your-own-snippets">它的语法</a>, 我可以这样去实现一个上面提到的，用于生成 React Component 代码的 snippet:</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>  <span class="token property">"fc"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token property">"scope"</span><span class="token operator">:</span> <span class="token string">"javascript,typescript,typescriptreact"</span><span class="token punctuation">,</span><br>    <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"React Function Component"</span><span class="token punctuation">,</span><br>    <span class="token property">"body"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>      <span class="token string">"function ${componentName} () {"</span><span class="token punctuation">,</span><br>      <span class="token string">"  return ("</span><span class="token punctuation">,</span><br>      <span class="token string">"    &lt;>"</span><span class="token punctuation">,</span><br>      <span class="token string">"    &lt;/>"</span><span class="token punctuation">,</span><br>      <span class="token string">"  )"</span><span class="token punctuation">,</span><br>      <span class="token string">"}"</span><span class="token punctuation">,</span><br>      <span class="token string">""</span><span class="token punctuation">,</span><br>      <span class="token string">"export default ${componentName}"</span><br>    <span class="token punctuation">]</span><span class="token punctuation">,</span><br>    <span class="token property">"prefix"</span><span class="token operator">:</span> <span class="token string">"fc"</span><br>  <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>然后我在编辑器里只要输入 <code>fc</code>, 就可以选择这个 snippet:</p>
+<p><img src="https://gbstatic.djyde.com/uPic/8hdVZE.gif" alt=""></p>
+<p>用 Snippet 很方便，但是编写这个 Snippet 体验非常糟糕，因为需要把代码块一行一行地转换成字符串，空格也要自己加。</p>
+<p>我想这也是我身边这么少人用 Snippet 的原因，我自己也深受其害。为了方便管理我的 Snippets 以及方便地导出为 VS Code code-snippets 文件，我写了个程序，可以让我把每个 snippet 写到单独的文件里，然后输出 VS Code code-snippets 格式的 JSON.</p>
+<h2 id="%E7%94%A8-snp-%E7%AE%A1%E7%90%86-snippets" tabindex="-1">用 snp 管理 snippets</h2>
+<blockquote>
+<p>目前只适用于 VS Code</p>
+</blockquote>
+<p>这个程序叫 <code>snp</code>, 你可以用 curl 直接安装这个程序：</p>
+<pre class="language-bash"><code class="language-bash">$ <span class="token function">curl</span> -sf https://gobinaries.com/djyde/snp <span class="token operator">|</span> <span class="token function">sh</span></code></pre>
+<p>于是，我现在管理 snippets 非常轻松。创建一个目录，用来存放这些 snippets,</p>
+<pre class="language-bash"><code class="language-bash">$ <span class="token function">mkdir</span> snippets<br>$ <span class="token builtin class-name">cd</span> snippets</code></pre>
+<p>然后我就可以创建我的 snippets, 以触发的词作为文件名，<code>.snp</code> 作为后缀。例如我创建一个输入 <code>fc</code> 就会触发的 snippet:</p>
+<pre class="language-bash"><code class="language-bash">$ <span class="token function">touch</span> fc.snp</code></pre>
+<p>在 <code>.snp</code> 文件里，你可以按照 <a href="https://code.visualstudio.com/docs/editor/userdefinedsnippets#_snippet-syntax">snippet 语法</a> 直接写你需要生成的代码，然后在文件的头部加上必要的信息：</p>
+<pre class="language-js"><code class="language-js"><span class="token operator">--</span><span class="token operator">-</span><br><span class="token literal-property property">scope</span><span class="token operator">:</span> javascript<span class="token punctuation">,</span>typescript<span class="token punctuation">,</span>typescriptreact<br><span class="token literal-property property">description</span><span class="token operator">:</span> React Function Component<br><span class="token operator">--</span><span class="token operator">-</span><br><br><span class="token keyword">function</span> $<span class="token punctuation">{</span>componentName<span class="token punctuation">}</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>  <span class="token keyword">return</span> <span class="token punctuation">(</span><br>    <span class="token operator">&lt;</span><span class="token operator">></span><br>    <span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">></span><br>  <span class="token punctuation">)</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">export</span> <span class="token keyword">default</span> $<span class="token punctuation">{</span>componentName<span class="token punctuation">}</span></code></pre>
+<blockquote>
+<p><code>scope</code> 指定了这个 snippet 在哪个语言环境生效，具体可以参照 <a href="https://code.visualstudio.com/docs/editor/userdefinedsnippets">VS Code 的文档</a></p>
+</blockquote>
+<p>然后执行：</p>
+<pre class="language-bash"><code class="language-bash">$ snp -p</code></pre>
+<p>你会看到命令输出了一段 JSON, 你可以把这段 JSON 写入文件里:</p>
+<pre class="language-bash"><code class="language-bash">$ snp -p <span class="token operator">></span> my-snippets.code-snippets</code></pre>
+<p>然后手动复制到 VS Code 的 snippets 文件里。</p>
+<blockquote>
+<p>当然，如果你嫌每次更新都要手动复制很麻烦，你可以直接运行：</p>
+<pre class="language-bash"><code class="language-bash">$ snp -u</code></pre>
+<p>这样 snippets 会自动写到 VS Code 的目录里，你不需要手动更新。</p>
+</blockquote>
+<p>这样就可以像我一样，在一个文件夹里统一管理 snippets, 用 snp 同步到 VS Code,还能上传到 GitHub:</p>
+<p><img src="https://gbstatic.djyde.com/uPic/s6ER6t.png?x-oss-process=style/80" alt="我的 snippets 目录"></p>
+<p><img src="https://gbstatic.djyde.com/uPic/fveMJq.gif" alt=""></p>
+<p>&lt;br /&gt;</p>
+<hr>
+<p>&lt;br /&gt;</p>
+<ul>
+<li>snp 是一个开源项目：<a href="https://github.com/djyde/snp">https://github.com/djyde/snp</a>. 用 Go 编写。</li>
+<li>这是我的 snippets 仓库：<a href="https://github.com/djyde/snippets">https://github.com/djyde/snippets</a></li>
+</ul>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 hi@taonan.lu
+      </div>
+      <hr />
+    <div class="text-center">
+  <img class="w-64 inline-block" src="https://i.loli.net/2021/10/20/JZ26YwDhmGzUy4u.jpg" alt="" />
+  <div class="text-sm">
+    通过支付宝 djyde520@gmail.com 或赞赏码赞助此文
+  </div>
+</div>
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  Tsja's Blog since 2023
+</footer>
+
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
