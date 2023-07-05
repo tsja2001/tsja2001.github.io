@@ -1,0 +1,21 @@
+{% extends "page.njk" %}
+
+{% block pageBody %}
+<div class="mt-12">
+  <h2>work作品集</h2>
+  {% for post in collections.work | reverse %}
+  <div class="relative">
+    {% if post.data.pin %}
+    <div class="absolute -left-6">✱</div>
+    {% endif %}
+    <div class="my-2 flex gap-2">
+      <a class="no-underline text-gray-700 font-normal" href="{{ post.url }}">{{ post.data.title }}</a> <span
+        class="italic text-gray-400">{% date post.date %}</span>
+    </div>
+     <div class="my-2 text-gray-400">
+      {{ post.templateContent | excerpt }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
