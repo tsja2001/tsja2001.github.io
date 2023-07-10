@@ -1025,9 +1025,6 @@ Ensure the default browser behavior of the `hidden` attribute.
 .block {
   display: block;
 }
-.inline-block {
-  display: inline-block;
-}
 .flex {
   display: flex;
 }
@@ -1039,9 +1036,6 @@ Ensure the default browser behavior of the `hidden` attribute.
 }
 .hidden {
   display: none;
-}
-.w-64 {
-  width: 16rem;
 }
 .border-collapse {
   border-collapse: collapse;
@@ -1100,14 +1094,6 @@ Ensure the default browser behavior of the `hidden` attribute.
 .text-gray-500 {
   --tw-text-opacity: 1;
   color: rgb(107 114 128 / var(--tw-text-opacity));
-}
-.text-gray-600 {
-  --tw-text-opacity: 1;
-  color: rgb(75 85 99 / var(--tw-text-opacity));
-}
-.text-gray-200 {
-  --tw-text-opacity: 1;
-  color: rgb(229 231 235 / var(--tw-text-opacity));
 }
 .underline {
   -webkit-text-decoration-line: underline;
