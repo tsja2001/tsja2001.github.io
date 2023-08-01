@@ -13,6 +13,8 @@ module.exports = (config) => {
   )
   config.addPassthroughCopy('_redirects')
   config.addPassthroughCopy('favicon.ico')
+  config.addPassthroughCopy("blog/image");
+
 
   config.addFilter("excerpt", (content) => {
     content = htmlToText(content, {
